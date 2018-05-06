@@ -1,9 +1,9 @@
-#include <draw.h>
-#include <hazards.h>
-#include <flag.h>
+#include "draw.h"
+#include "hazards.h"
+#include "flag.h"
 #include <Arduboy2.h>
-#include <player.h>
-#include <assets.h>
+#include "player.h"
+#include "assets.h"
 
 
 extern Arduboy2 arduboy;
@@ -25,11 +25,11 @@ extern unsigned int plScore;
 extern char buffer[];
 extern unsigned char screen;
 
-extern Player *player;
+extern Player player;
 
-Flag *flag;
-Hazards *hazardsList[6] = {0,0,0,0,0,0};
-Hazards *projectileList[24] = {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};
+Flag flag;
+Hazards hazardsList[6];
+Hazards projectileList[24];
 
 void hideOption(unsigned char x,unsigned char y, unsigned char w);
 
@@ -165,11 +165,11 @@ void drawHud(void){
       //arduboy.print(freeMemory());
 
       arduboy.setCursor(104, 0); //room area.
-      arduboy.print(player->plPosOnMapH);
+      arduboy.print(player.plPosOnMapH);
       arduboy.setCursor(112, 0);
       arduboy.print("-");
       arduboy.setCursor(120, 0);
-      arduboy.print(player->plPosOnMapV);
+      arduboy.print(player.plPosOnMapV);
 
       hideOption(0,0,128);
     }
@@ -224,78 +224,78 @@ void drawHud(void){
 }
 
 void drawPlayer(void){
-  if (player->plAction == 0 || player->plAction == 1 || player->plAction == 2){
+  if (player.plAction == 0 || player.plAction == 1 || player.plAction == 2){
 
-        if (player->plTimer < player->plframeExpo){
-              player->plTimer++;
+        if (player.plTimer < player.plframeExpo){
+              player.plTimer++;
          }else{
-             if (player->plAction !=2) player->plFrameInd++;
-             if (player->plAction == 2 && player->plFrameInd < 6) player->plFrameInd++;
-             player->plTimer=0;
+             if (player.plAction !=2) player.plFrameInd++;
+             if (player.plAction == 2 && player.plFrameInd < 6) player.plFrameInd++;
+             player.plTimer=0;
          }
 }
 
 
- if (player->plAction == 0){ //Idling
+ if (player.plAction == 0){ //Idling
 
-     if (player->plDir == 4){//left.
+     if (player.plDir == 4){//left.
 
-         if (player->plFrameInd == 2) player->plFrameInd = 0;
+         if (player.plFrameInd == 2) player.plFrameInd = 0;
 
-         arduboy.drawBitmap(player->plX,player->plY,&splayer[192+(8*player->plFrameInd)],8,8,WHITE);
-     }else if (player->plDir == 2){ //down.
+         arduboy.drawBitmap(player.plX,player.plY,&splayer[192+(8*player.plFrameInd)],8,8,WHITE);
+     }else if (player.plDir == 2){ //down.
 
-         if (player->plFrameInd == 2) player->plFrameInd = 0;
+         if (player.plFrameInd == 2) player.plFrameInd = 0;
 
-         arduboy.drawBitmap(player->plX,player->plY,&splayer[0+(8*player->plFrameInd)],8,8,WHITE);
-     }else if (player->plDir == 6){//up
+         arduboy.drawBitmap(player.plX,player.plY,&splayer[0+(8*player.plFrameInd)],8,8,WHITE);
+     }else if (player.plDir == 6){//up
 
-         if (player->plFrameInd == 2) player->plFrameInd = 0;
+         if (player.plFrameInd == 2) player.plFrameInd = 0;
 
-         arduboy.drawBitmap(player->plX,player->plY,&splayer[64+(8*+player->plFrameInd)],8,8,WHITE);
-     }else if (player->plDir == 0){//right
+         arduboy.drawBitmap(player.plX,player.plY,&splayer[64+(8*+player.plFrameInd)],8,8,WHITE);
+     }else if (player.plDir == 0){//right
 
-         if (player->plFrameInd == 2) player->plFrameInd = 0;
+         if (player.plFrameInd == 2) player.plFrameInd = 0;
 
-         arduboy.drawBitmap(player->plX,player->plY,&splayer[128+(8*player->plFrameInd)],8,8,WHITE);
+         arduboy.drawBitmap(player.plX,player.plY,&splayer[128+(8*player.plFrameInd)],8,8,WHITE);
      }
 
 
  }
 
 
- if (player->plAction == 1){ //walking
+ if (player.plAction == 1){ //walking
 
 
-     if (player->plDir == 2){ //walk down.
+     if (player.plDir == 2){ //walk down.
 
-        if (player->plFrameInd == 6) player->plFrameInd = 0;
-         arduboy.drawBitmap(player->plX,player->plY,&splayer[16+(8*player->plFrameInd)],8,8,WHITE);
+        if (player.plFrameInd == 6) player.plFrameInd = 0;
+         arduboy.drawBitmap(player.plX,player.plY,&splayer[16+(8*player.plFrameInd)],8,8,WHITE);
 
-     }else if (player->plDir == 6){ //walk up.
+     }else if (player.plDir == 6){ //walk up.
 
-         if (player->plFrameInd == 6) player->plFrameInd = 0;
-         arduboy.drawBitmap(player->plX,player->plY,&splayer[80+(8*player->plFrameInd)],8,8,WHITE);
+         if (player.plFrameInd == 6) player.plFrameInd = 0;
+         arduboy.drawBitmap(player.plX,player.plY,&splayer[80+(8*player.plFrameInd)],8,8,WHITE);
 
-      }else if (player->plDir == 0){ //walk right.
+      }else if (player.plDir == 0){ //walk right.
 
-          if (player->plFrameInd == 6) player->plFrameInd = 0;
-          arduboy.drawBitmap(player->plX,player->plY,&splayer[136+(8*player->plFrameInd)],8,8,WHITE);
+          if (player.plFrameInd == 6) player.plFrameInd = 0;
+          arduboy.drawBitmap(player.plX,player.plY,&splayer[136+(8*player.plFrameInd)],8,8,WHITE);
 
-     }else if (player->plDir == 4){ //walk left.
+     }else if (player.plDir == 4){ //walk left.
 
-          if (player->plFrameInd == 6) player->plFrameInd = 0;
-         arduboy.drawBitmap(player->plX,player->plY,&splayer[208+(8*player->plFrameInd)],8,8,WHITE);
+          if (player.plFrameInd == 6) player.plFrameInd = 0;
+         arduboy.drawBitmap(player.plX,player.plY,&splayer[208+(8*player.plFrameInd)],8,8,WHITE);
 
      }
 
 
  }
 
- if (player->isHit){ //explode
+ if (player.isHit){ //explode
 
-          if (player->plFrameInd < 6){
-              arduboy.drawBitmap(player->plX, player->plY, &sexplotion[0+(8*player->plFrameInd)], 8, 8, WHITE);
+          if (player.plFrameInd < 6){
+              arduboy.drawBitmap(player.plX, player.plY, &sexplotion[0+(8*player.plFrameInd)], 8, 8, WHITE);
           }
 
  }
@@ -306,14 +306,14 @@ void drawObjects(void){
 
   //draw flag
 
-  if (flag != 0) {
+  if (flag.active == true) {
 
-    if (arduboy.everyXFrames(flag->timer)){
-      flag->frameIndex++;
+    if (arduboy.everyXFrames(flag.timer)){
+      flag.frameIndex++;
     }
 
-      if (flag->frameIndex == 5) flag->frameIndex = 0;
-      arduboy.drawBitmap(flag->iX, flag->iY, &sflag[0+(8*flag->frameIndex)], 8, 8, WHITE);
+      if (flag.frameIndex == 5) flag.frameIndex = 0;
+      arduboy.drawBitmap(flag.iX, flag.iY, &sflag[0+(8*flag.frameIndex)], 8, 8, WHITE);
 
   }
 
@@ -322,28 +322,28 @@ void drawObjects(void){
 
     if (gameState != 2) {
 
-      if (hazardsList[i] != 0 && hazardsList[i]->active == true){
+      if (hazardsList[i].active == true){
 
-        if(hazardsList[i]->hType == 1){//Mine
+        if(hazardsList[i].hType == 1){//Mine
 
-          if (arduboy.everyXFrames(hazardsList[i]->frameTimer)) hazardsList[i]->frameIndex++;
+          if (arduboy.everyXFrames(hazardsList[i].frameTimer)) hazardsList[i].frameIndex++;
 
-          if (hazardsList[i]->frameIndex == 2) hazardsList[i]->frameIndex = 0;
-          arduboy.drawBitmap(hazardsList[i]->hX, hazardsList[i]->hY, &shazards[0+(8*hazardsList[i]->frameIndex)], 8, 8, WHITE);
+          if (hazardsList[i].frameIndex == 2) hazardsList[i].frameIndex = 0;
+          arduboy.drawBitmap(hazardsList[i].hX, hazardsList[i].hY, &shazards[0+(8*hazardsList[i].frameIndex)], 8, 8, WHITE);
 
-        }else if (hazardsList[i]->hType == 2){ //turret
+        }else if (hazardsList[i].hType == 2){ //turret
 
-          if (arduboy.everyXFrames(hazardsList[i]->frameTimer)) hazardsList[i]->frameIndex++;
+          if (arduboy.everyXFrames(hazardsList[i].frameTimer)) hazardsList[i].frameIndex++;
 
-          if (hazardsList[i]->frameIndex >= 2) hazardsList[i]->frameIndex = 0;
-          arduboy.drawBitmap(hazardsList[i]->hX, hazardsList[i]->hY, &shazards[16+(8*hazardsList[i]->frameIndex)], 8, 8, WHITE);
+          if (hazardsList[i].frameIndex >= 2) hazardsList[i].frameIndex = 0;
+          arduboy.drawBitmap(hazardsList[i].hX, hazardsList[i].hY, &shazards[16+(8*hazardsList[i].frameIndex)], 8, 8, WHITE);
 
-        }else if (hazardsList[i]->hType == 3){ //pit
+        }else if (hazardsList[i].hType == 3){ //pit
 
-          if (arduboy.everyXFrames(hazardsList[i]->frameTimer)) hazardsList[i]->frameIndex++;
+          if (arduboy.everyXFrames(hazardsList[i].frameTimer)) hazardsList[i].frameIndex++;
 
-          if (hazardsList[i]->frameIndex >= 2) hazardsList[i]->frameIndex = 0;
-          arduboy.drawBitmap(hazardsList[i]->hX, hazardsList[i]->hY, &shazards[32+(8*hazardsList[i]->frameIndex)], 8, 8, WHITE);
+          if (hazardsList[i].frameIndex >= 2) hazardsList[i].frameIndex = 0;
+          arduboy.drawBitmap(hazardsList[i].hX, hazardsList[i].hY, &shazards[32+(8*hazardsList[i].frameIndex)], 8, 8, WHITE);
 
         }
 
@@ -355,21 +355,21 @@ void drawObjects(void){
   //Draw projectiles.
   for (unsigned char i = 0; i < 24; i++){
 
-    if (projectileList[i] != 0){
+    if (projectileList[i].active == true){
 
-      if (projectileList[i]->hType == 4){
+      if (projectileList[i].hType == 4){
 
-        if (projectileList[i]->exposeTimer > 0){
-          projectileList[i]->exposeTimer--;
+        if (projectileList[i].exposeTimer > 0){
+          projectileList[i].exposeTimer--;
         }else{
-          projectileList[i]->frameIndex++;
-          projectileList[i]->exposeTimer = 10;
+          projectileList[i].frameIndex++;
+          projectileList[i].exposeTimer = 10;
         }
-        if (projectileList[i]->hType == 4){//bullet
+        if (projectileList[i].hType == 4){//bullet
 
-          if (projectileList[i]->frameIndex >= 2) projectileList[i]->frameIndex = 0;
+          if (projectileList[i].frameIndex >= 2) projectileList[i].frameIndex = 0;
 
-          arduboy.drawBitmap(projectileList[i]->hX, projectileList[i]->hY, &shazards[48+(8*projectileList[i]->frameIndex)],8,8,WHITE);
+          arduboy.drawBitmap(projectileList[i].hX, projectileList[i].hY, &shazards[48+(8*projectileList[i].frameIndex)],8,8,WHITE);
 
         }
 
@@ -383,7 +383,7 @@ void drawObjects(void){
 
 void drawBG(void){
 
-  if (player->isHit == false && gameState != 4 && gameState != 5 && screen == 3){
+  if (player.isHit == false && gameState != 4 && gameState != 5 && screen == 3){
 
     //Create arrows if in starting room or in an unlocked room.
     static bool flash = true;
@@ -396,10 +396,10 @@ void drawBG(void){
 
       if (flash){
 
-        if (player->plPosOnMapH > 0) arduboy.drawBitmap(0, 32, &bgtiles[32], 8, 8, WHITE);
-        if (player->plPosOnMapH < numOfScreensH) arduboy.drawBitmap(120, 32, &bgtiles[24], 8, 8, WHITE);
-        if (player->plPosOnMapV > 0) arduboy.drawBitmap(64, 8, &bgtiles[48], 8, 8, WHITE);
-        if (player->plPosOnMapV < numOfScreensV) arduboy.drawBitmap(64, 56, &bgtiles[40], 8, 8, WHITE);
+        if (player.plPosOnMapH > 0) arduboy.drawBitmap(0, 32, &bgtiles[32], 8, 8, WHITE);
+        if (player.plPosOnMapH < numOfScreensH) arduboy.drawBitmap(120, 32, &bgtiles[24], 8, 8, WHITE);
+        if (player.plPosOnMapV > 0) arduboy.drawBitmap(64, 8, &bgtiles[48], 8, 8, WHITE);
+        if (player.plPosOnMapV < numOfScreensV) arduboy.drawBitmap(64, 56, &bgtiles[40], 8, 8, WHITE);
 
       }
 
@@ -417,19 +417,19 @@ void drawBG(void){
          arduboy.drawBitmap(i*8, 56, &bgtiles[screenMap[7][i]], 8, 8, WHITE);
          arduboy.drawBitmap(i*8, 64, &bgtiles[screenMap[8][i]], 8, 8, WHITE);
 
-         if (roomLock == true) if (roomMap[player->plPosOnMapV][player->plPosOnMapH] != 5 && roomMap[player->plPosOnMapV][player->plPosOnMapH] != 4) arduboy.drawBitmap(roomSwitchX*8, roomSwitchY*8, &bgSwitch[0],8,8,WHITE);
-         if (roomLock == false) if (roomMap[player->plPosOnMapV][player->plPosOnMapH] != 5 && roomMap[player->plPosOnMapV][player->plPosOnMapH] != 4) arduboy.drawBitmap(roomSwitchX*8, roomSwitchY*8, &bgSwitch[8],8,8,WHITE);
+         if (roomLock == true) if (roomMap[player.plPosOnMapV][player.plPosOnMapH] != 5 && roomMap[player.plPosOnMapV][player.plPosOnMapH] != 4) arduboy.drawBitmap(roomSwitchX*8, roomSwitchY*8, &bgSwitch[0],8,8,WHITE);
+         if (roomLock == false) if (roomMap[player.plPosOnMapV][player.plPosOnMapH] != 5 && roomMap[player.plPosOnMapV][player.plPosOnMapH] != 4) arduboy.drawBitmap(roomSwitchX*8, roomSwitchY*8, &bgSwitch[8],8,8,WHITE);
 
-           if (roomMap[player->plPosOnMapV][player->plPosOnMapH] == 1 || roomMap[player->plPosOnMapV][player->plPosOnMapH] == 2) {
+           if (roomMap[player.plPosOnMapV][player.plPosOnMapH] == 1 || roomMap[player.plPosOnMapV][player.plPosOnMapH] == 2) {
 
-              if (hazardsList[0] > 0 && hazardsList[0]->active == true) arduboy.drawBitmap(hazardsList[0]->hX, hazardsList[0]->hY, &bgmask[8],8,8,BLACK); //Hazard mask
-              if (hazardsList[1] > 0 && hazardsList[1]->active == true) arduboy.drawBitmap(hazardsList[1]->hX, hazardsList[1]->hY, &bgmask[8],8,8,BLACK); //Hazard mask
-              if (hazardsList[2] > 0 && hazardsList[2]->active == true) arduboy.drawBitmap(hazardsList[2]->hX, hazardsList[2]->hY, &bgmask[8],8,8,BLACK); //Hazard mask
-              if (hazardsList[3] > 0 && hazardsList[3]->active == true) arduboy.drawBitmap(hazardsList[3]->hX, hazardsList[3]->hY, &bgmask[8],8,8,BLACK); //Hazard mask
+              if (hazardsList[0].active == true) arduboy.drawBitmap(hazardsList[0].hX, hazardsList[0].hY, &bgmask[8],8,8,BLACK); //Hazard mask
+              if (hazardsList[1].active == true) arduboy.drawBitmap(hazardsList[1].hX, hazardsList[1].hY, &bgmask[8],8,8,BLACK); //Hazard mask
+              if (hazardsList[2].active == true) arduboy.drawBitmap(hazardsList[2].hX, hazardsList[2].hY, &bgmask[8],8,8,BLACK); //Hazard mask
+              if (hazardsList[3].active == true) arduboy.drawBitmap(hazardsList[3].hX, hazardsList[3].hY, &bgmask[8],8,8,BLACK); //Hazard mask
 
            }
 
-         arduboy.drawBitmap(player->plX, player->plY, &bgmask[8], 8, 8, BLACK); //player mask.
+         arduboy.drawBitmap(player.plX, player.plY, &bgmask[8], 8, 8, BLACK); //player mask.
 
 
     }

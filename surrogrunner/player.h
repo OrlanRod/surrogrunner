@@ -21,6 +21,7 @@ class Player{
       unsigned char plAction = 0; //Check/set what action the player is doing. ie idling, walking, etc.
       bool delay = false;
       bool isHit = false;
+      bool active = false;
 
 
         Player();

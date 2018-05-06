@@ -2,24 +2,26 @@
 #include <Arduboy2.h>
 #include <ArduboyTones.h>
 #include <stdio.h>
-#include <MemoryFree.h>
-#include <player.h>
-#include <flag.h>
-#include <hazards.h>
-#include <assets.h>
-#include <draw.h>
-#include <garbage.h>
-#include <soundfx.h>
+#include "enums.h"
+//#include <MemoryFree.h>
+#include "player.h"
+#include "flag.h"
+#include "hazards.h"
+#include "assets.h"
+#include "draw.h"
+#include "soundfx.h"
 #include <time.h>
 
 Arduboy2 arduboy;
 ArduboyTones sound(arduboy.audio.enabled);
-extern Player *player;
-extern Flag *flag;
-extern Hazards *hazardsList[];
-extern Hazards *projectileList[];
-//Todo:
-//1. turn off drawing for player on game completed, and add portrait sprite.
+extern Player player;
+extern Flag flag;
+extern Hazards hazardsList[];
+extern Hazards projectileList[];
+//Changes 0.6:
+//Optimizations.
+//Removed pointers from flag, player, hazards, and projectile objects.
+//Change string memobjmanager and the soundfx functions to enum type.
 
 bool invincible = false;
 unsigned char gameState = 0; //1 = game start. 2 = stage clear. 3 = lost a continue,respawn. 4 = game over. 5 = game victory.
@@ -81,12 +83,64 @@ unsigned char roomMap[10][10] = { // 0 = empty. 1 = flag-with hazard, 2 = no fla
 
 };
 
+
 void resetVars(void);
 void resetSwitch(void);
 void hazardAIs(void);
 void spawn(void);
 void genMap(void);
 void resetMaps(String type);
+void memManageOBJ(Names obj, Names act){
+
+if (act == DEACTIVATE){//deactivate
+
+    if (obj == FLAG){ //flag
+
+      if (flag.active == true){
+
+        numOfFlagsSpawned--;
+        flag.active = false;
+
+      }
+
+      if (roomLock == false) spawnedFlag = false;
+
+    }else if (obj == HAZARDS){ //Hazards
+      for(unsigned char ii=0; ii < 6; ii++){
+
+        if (hazardsList[ii].active == true) {
+          numOfHazardsSpawned--;
+          hazardsList[ii].active = false;
+        }
+
+      }
+      //spawnedHazard = false;
+    }else if (obj == BULLETS){ //bullets
+
+      for(unsigned char ii=0; ii < 24; ii++){
+
+        if (projectileList[ii].active == true) projectileList[ii].active = false;
+
+      }
+
+    }
+
+  }
+
+  if (act == RESET){//reset
+    if (obj == HAZARDS){
+      //reset all active turrets.
+      for (unsigned char iii = 0; iii < 6; iii++){
+        if (hazardsList[iii].hType == 2){
+          hazardsList[iii].fireIndex = 0;
+          hazardsList[iii].projIndex = 0;
+        }
+      }
+    }
+  }
+
+
+}
 
 void resetVars(void){
 
@@ -126,13 +180,13 @@ void hazardAIs(void){
 
   for (unsigned i = 0; i < 6; i++){
 
-      hazardsList[i]->hazardAI();
+      hazardsList[i].hazardAI();
 
   }
 
   for (unsigned i = 0; i < 24; i++){
 
-      projectileList[i]->hazardAI();
+      projectileList[i].hazardAI();
 
   }
 
@@ -164,25 +218,24 @@ void resetMaps(String type){
 
 }
 
-
 void resetSwitch(void){
 
   resetMaps("SCREEN");
-  if (roomMap[player->plPosOnMapV][player->plPosOnMapH] != 5 && roomMap[player->plPosOnMapV][player->plPosOnMapH] != 4){
+  if (roomMap[player.plPosOnMapV][player.plPosOnMapH] != 5 && roomMap[player.plPosOnMapV][player.plPosOnMapH] != 4){
 
     while (spawnedSwitch == false){
 
-      if (player->plDir == 0){
+      if (player.plDir == 0){
 
         roomSwitchX = 15;
         roomSwitchY = random()% 7 + 1;
 
-      }else if (player->plDir == 2){
+      }else if (player.plDir == 2){
 
         roomSwitchX = random()% 16 + 0;
         roomSwitchY = 7;
 
-      }else if (player->plDir == 4){
+      }else if (player.plDir == 4){
 
         roomSwitchX = 0;
         roomSwitchY = random()% 7 + 1;
@@ -285,8 +338,8 @@ void genMap(void){
      if (roomMap[genY][genX] == 0){
 
       roomMap[genY][genX] = 5;
-      player->plPosOnMapH = genX;
-      player->plPosOnMapV = genY;
+      player.plPosOnMapH = genX;
+      player.plPosOnMapV = genY;
       startSet = true;
 
       }
@@ -307,12 +360,7 @@ void genMap(void){
              }
          }
        }
-
-
-
    }
-   //flagGVal = 0;
-
 
  }
 flagGVal = 0;
@@ -327,7 +375,7 @@ void spawn(void){
   unsigned char spawnX;
   unsigned char spawnY;
 
-  if (roomLock == true && (roomMap[player->plPosOnMapV][player->plPosOnMapH] == 1)){
+  if (roomLock == true && (roomMap[player.plPosOnMapV][player.plPosOnMapH] == 1)){
 
 
     if (spawnedFlag == false){ //spawn flags.
@@ -337,10 +385,10 @@ void spawn(void){
 
             if (screenMap[spawnY][spawnX] != 30){ //30 = flag.
 
-              flag = new Flag;
-              flag->iX = spawnX*8;
-              flag->iY = spawnY*8;
-              flag->iId = flagSpawnID;
+              flag.active = true;
+              flag.iX = spawnX*8;
+              flag.iY = spawnY*8;
+              flag.iId = flagSpawnID;
               flagsSpwnd++;
               flagSpawnID++;
               screenMap[spawnY][spawnX] = 30;
@@ -357,7 +405,7 @@ void spawn(void){
   }
 
 
-  if ((roomMap[player->plPosOnMapV][player->plPosOnMapH] == 1 || roomMap[player->plPosOnMapV][player->plPosOnMapH] == 2) && continues > 0){ //spawn hazards.
+  if ((roomMap[player.plPosOnMapV][player.plPosOnMapH] == 1 || roomMap[player.plPosOnMapV][player.plPosOnMapH] == 2) && continues > 0 && roomLock == true){ //spawn hazards.
 
     if (spawnedHazard == false){
 
@@ -365,38 +413,45 @@ void spawn(void){
         spawnX = random() % 13 + 2;
         spawnY = random() % 5 + 2;
         unsigned char ran = random(10);
-        if (screenMap[spawnY][spawnX] != 40 && screenMap[spawnY][spawnX] != 60 && screenMap[spawnY][spawnX] != 30 && hazardsSpwnd < hazardsPerScreen){ //40 = hazard, 60 = switch.
+        if (screenMap[spawnY][spawnX] != 40 && screenMap[spawnY][spawnX] != 60 && screenMap[spawnY][spawnX] != 30 && hazardsSpwnd < hazardsPerScreen && roomLock == true){ //40 = hazard, 60 = switch.
+
                 srand(time(NULL));
-               //hazardType = random() % 3 + 1;
                if (stage < 10) hazardType = 1;
                if (stage >= 10 && stage < 20) hazardType = random() % 2 + 1;
                if (stage >= 20) hazardType = random() % 3 + 1;
-               hazardsList[hazardsSpwnd] = new Hazards;
-               if (hazardType == 1) hazardsList[i]->hType = 1;
+               hazardsList[hazardsSpwnd].active = true;
                if (hazardType == 1) {
+                 hazardsList[i].hType = 1;
                  if (ran <= 5 ) {
-                   hazardsList[i]->dirCycle = false;
+                   hazardsList[i].dirCycle = false;
                  }else{
-                   hazardsList[i]->dirCycle = true;
+                   hazardsList[i].dirCycle = true;
                  }
+
+               }else if (hazardType == 2) {
+
+                  hazardsList[i].hType = 2;
+                  hazardsList[i].fire = false;
+                  hazardsList[i].projIndex = 0;
+                  hazardsList[i].fireIndex = 0;
+
+               }else if (hazardType == 3) {
+                 hazardsList[i].hType = 3;
+
                }
-               if (hazardType == 2) hazardsList[i]->hType = 2;
-               if (hazardType == 3) hazardsList[i]->hType = 3;
-               hazardsList[i]->hX = spawnX*8;
-               hazardsList[i]->hY = spawnY*8;
-               hazardsList[i]->hID = hazardSpawnID;
-               if (stage < 10) hazardsList[i]->stepTimer = 20; //30
-               if (stage >= 10 && stage < 20) hazardsList[i]->stepTimer = 10;
-               if (stage >= 20) hazardsList[i]->stepTimer = 5;
-               if (stage < 10) hazardsList[i]->hAI = 1;
-               if (stage >= 10) hazardsList[i]->hAI = random()% 2+1;
+
+               hazardsList[i].hX = spawnX*8;
+               hazardsList[i].hY = spawnY*8;
+               hazardsList[i].hID = hazardSpawnID;
+               if (stage < 10) hazardsList[i].stepTimer = 20; //30
+               if (stage >= 10 && stage < 20) hazardsList[i].stepTimer = 10;
+               if (stage >= 20) hazardsList[i].stepTimer = 5;
+               if (stage < 10) hazardsList[i].hAI = 1;
+               if (stage >= 10) hazardsList[i].hAI = random()% 2+1;
                hazardsSpwnd++;
                hazardSpawnID++;
                screenMap[spawnY][spawnX] = 40;
                numOfHazardsSpawned++;
-
-
-
 
         }
       }
@@ -413,41 +468,39 @@ void spawn(void){
 
     for(unsigned char i = 0; i < 6; i++){ //spawn projectile.
 
-      if (hazardsList[i] != 0 && hazardsList[i]->active == true && hazardsList[i]->fire == true && (hazardsList[i]->hAI == 1 || hazardsList[i]->hAI == 2)){
+      if (hazardsList[i].active == true && hazardsList[i].hType == 2 && hazardsList[i].fire == true && (hazardsList[i].hAI == 1 || hazardsList[i].hAI == 2)){
 
           for (unsigned char ii = 0; ii < 24; ii++){
 
-            if (hazardsList[i]->fireIndex < 4 && projectileList[ii] == 0){
+            if (hazardsList[i].fireIndex < 4 && projectileList[ii].active == false){
 
-                  projectileList[ii] = new Hazards;
-                  projectileList[ii]->hType = 4;
-                  projectileList[ii]->hX = hazardsList[i]->hX;
-                  projectileList[ii]->hY = hazardsList[i]->hY;
-                  projectileList[ii]->cellSteps = hazardsList[i]->cellSteps;
-                  projectileList[ii]->projMoveTimerSet = hazardsList[i]->stepTimer;
-                  if (hazardsList[i]->fireStyle == 1) projectileList[ii]->hDir = 1+(2*hazardsList[i]->fireIndex);
-                  if (hazardsList[i]->fireStyle == 2) projectileList[ii]->hDir = 0+(2*hazardsList[i]->fireIndex);
-                  projectileList[ii]->hID = hazardsList[i]->hID;
-                  hazardsList[i]->fireIndex++;
-                  hazardsList[i]->projIndex++;
+                  projectileList[ii].hType = 4;
+                  projectileList[ii].hX = hazardsList[i].hX;
+                  projectileList[ii].hY = hazardsList[i].hY;
+                  projectileList[ii].cellSteps = hazardsList[i].cellSteps;
+                  projectileList[ii].projMoveTimerSet = hazardsList[i].stepTimer;
+                  if (hazardsList[i].fireStyle == 1) projectileList[ii].hDir = 1+(2*hazardsList[i].fireIndex);
+                  if (hazardsList[i].fireStyle == 2) projectileList[ii].hDir = 0+(2*hazardsList[i].fireIndex);
+                  projectileList[ii].hID = hazardsList[i].hID;
+                  projectileList[ii].active = true;
+                  hazardsList[i].fireIndex++;
+                  hazardsList[i].projIndex++;
 
             }
 
           }
 
-          if (hazardsList[i]->hAI == 2){
-            if (hazardsList[i]->fireIndex >= 4) hazardsList[i]->fireStyle++;
-            if (hazardsList[i]->fireStyle > 2) hazardsList[i]->fireStyle = 1;
+          if (hazardsList[i].hAI == 2){
+            if (hazardsList[i].fireIndex >= 4) hazardsList[i].fireStyle++;
+            if (hazardsList[i].fireStyle > 2) hazardsList[i].fireStyle = 1;
           }
 
-          hazardsList[i]->fire = false;
+          hazardsList[i].fire = false;
 
       }
 
 
     }
-
-
 
       }
 
@@ -489,9 +542,7 @@ void loop() {
 
     arduboy.clear();
 
-
     //Serial.write(arduboy.getBuffer(), 128 * 64 / 8);
-
 
     sfxPlay();
 
@@ -500,19 +551,19 @@ void loop() {
       spawn();
 
       //Edit screen map, as the player runs over a tile and add to score.
-      if (player->plAction == 1){
+      if (player.plAction == 1){
 
-        if (screenMap[(player->plY)/8][(player->plX)/8] != 8 && (player->collision(player->plX, player->plY, roomSwitchX*8, roomSwitchY*8) != 1)){
+        if (screenMap[(player.plY)/8][(player.plX)/8] != 8 && (player.collision(player.plX, player.plY, roomSwitchX*8, roomSwitchY*8) != 1)){
 
-              screenMap[(player->plY)/8][(player->plX)/8] = 8;
-              plScore+= 20-(player->resetRunTimer);
-              setSfxInfo("LIGHT", 800, 10);
+              screenMap[(player.plY)/8][(player.plX)/8] = 8;
+              plScore+= 20-(player.resetRunTimer);
+              setSfxInfo(LIGHT, 800, 10);
 
         }
 
       }
 
-        if (player->isHit == false){
+        if (player.isHit == false){
 
           if (arduboy.everyXFrames(30)){
 
@@ -541,29 +592,28 @@ void loop() {
 
         for (unsigned char i = 0; i < 2; i++){
 
-          if (flag > 0 && gameState !=2 && gameState !=4){
+          if (flag.active == true && gameState !=2 && gameState !=4){
 
               //check if player collided with flag, if so, remove flag from memory and flagmap, then add to flag goal.
 
-                if (player->collision(player->plX, player->plY, flag->iX, flag->iY) == 1){
+                if (player.collision(player.plX, player.plY, flag.iX, flag.iY) == 1){
 
                   flagCount++;
-                  memManageOBJ("FLAG","REMOVEALL");
-                  if (player->resetRunTimer > 2) player->resetRunTimer-= 2;
-                  //if (player->runTimer > 2) player->runTimer-= 2;
+                  //if (flag.active == true) flag.active = false;
+                  memManageOBJ(FLAG,DEACTIVATE);
+                  if (player.resetRunTimer > 2) player.resetRunTimer-= 2;
+                  //if (player.runTimer > 2) player.runTimer-= 2;
 
-                  if (EEPROM.read(2) == 1) setSfxInfo("FLAG", 900, 100);
+                  if (EEPROM.read(2) == 1) setSfxInfo(PICKUP, 900, 100);
 
                 }
                 //if all flags are gone from the screen, reset room back to hazard room only.
-                if ((roomMap[player->plPosOnMapV][player->plPosOnMapH] == 1 || roomMap[player->plPosOnMapV][player->plPosOnMapH] == 2) && numOfFlagsSpawned == 0){
+                if ((roomMap[player.plPosOnMapV][player.plPosOnMapH] == 1 || roomMap[player.plPosOnMapV][player.plPosOnMapH] == 2) && numOfFlagsSpawned == 0){
 
                   spawnedFlag = false;
-                  roomMap[player->plPosOnMapV][player->plPosOnMapH] = 2;
+                  roomMap[player.plPosOnMapV][player.plPosOnMapH] = 2;
 
                 }
-
-
 
             }
 
@@ -572,30 +622,30 @@ void loop() {
         //check if run into bullet, if so trigger hit. Remove bullets.
         for (unsigned char i = 0; i < 24; i++){
 
-          if (projectileList[i] != 0 && invincible == false){
+          if (projectileList[i].active == true && invincible == false){
 
-            if (player->collision(player->plX, player->plY, projectileList[i]->hX, projectileList[i]->hY) == 1 && player->isHit == false){
+            if (player.collision(player.plX, player.plY, projectileList[i].hX, projectileList[i].hY) == 1 && player.isHit == false){
 
-              if (player->resetRunTimer < 10) {
-                player->runTimer += 2;
-                player->resetRunTimer += 2;
+              if (player.resetRunTimer < 10) {
+                player.runTimer += 2;
+                player.resetRunTimer += 2;
               }
-              player->isHit = true;
-              player->plAction = 2;
-              player->plFrameInd = 0;
-              setSfxInfo("EXPLODE", 600, 10);
+              player.isHit = true;
+              player.plAction = 2;
+              player.plFrameInd = 0;
+              setSfxInfo(EXPLODE, 600, 10);
               if (continues > 0){
                 continues -= 1;
                 gameState = 3;
               }
 
-              memManageOBJ("BULLETS", "REMOVEALL");
+              memManageOBJ(BULLETS, DEACTIVATE);
 
               for (unsigned ii = 0; ii < 6; ii++){
-                if (hazardsList[ii]->hType == 2) {
-                  hazardsList[ii]->fire = false;
-                  hazardsList[ii]->fireIndex = 0;
-                  hazardsList[ii]->projIndex = 0;
+                if (hazardsList[ii].hType == 2) {
+                  hazardsList[ii].fire = false;
+                  hazardsList[ii].fireIndex = 0;
+                  hazardsList[ii].projIndex = 0;
                 }
               }
 
@@ -609,26 +659,48 @@ void loop() {
         //check if run into mine or turret, if so trigger hit. Remove turret.
         for (unsigned char i = 0; i < 6; i++){
 
-          if (hazardsList[i] != 0 && invincible == false){
+          if (hazardsList[i].active == true && invincible == false){
 
-            if (player->collision(player->plX, player->plY, hazardsList[i]->hX, hazardsList[i]->hY) == 1 && hazardsList[i]->active == true){
+            if (player.collision(player.plX, player.plY, hazardsList[i].hX, hazardsList[i].hY) == 1 && hazardsList[i].active == true && hazardsList[i].hType == 1){
 
 
-              if (player->resetRunTimer < 10) {
-                player->runTimer += 2;
-                player->resetRunTimer += 2;
+              if (player.resetRunTimer < 10) {
+                player.runTimer += 2;
+                player.resetRunTimer += 2;
               }
-              player->isHit = true;
-              player->plAction = 2;
+              player.isHit = true;
+              player.plAction = 2;
 
-              player->plFrameInd = 0;
-              setSfxInfo("EXPLODE", 600, 10);
+              player.plFrameInd = 0;
+              setSfxInfo(EXPLODE, 600, 10);
               if (continues > 0){
                 continues -= 1;
                 gameState = 3;
               }
-              hazardsList[i]->active = false;
-              memManageOBJ("","REMOVEINACTIVE");
+              hazardsList[i].active = false;
+
+
+            }else if (player.collision(player.plX, player.plY, hazardsList[i].hX, hazardsList[i].hY) == 1 && hazardsList[i].active == true && hazardsList[i].hType == 2){
+
+
+              if (player.resetRunTimer < 10) {
+                player.runTimer += 2;
+                player.resetRunTimer += 2;
+              }
+              player.isHit = true;
+              player.plAction = 2;
+
+              player.plFrameInd = 0;
+              setSfxInfo(EXPLODE, 600, 10);
+              if (continues > 0){
+                continues -= 1;
+                gameState = 3;
+              }
+
+              memManageOBJ(HAZARDS,RESET);//reset turrets.
+              memManageOBJ(BULLETS,DEACTIVATE);//remove bullets.
+
+              hazardsList[i].active = false;
 
             }
 
@@ -636,20 +708,19 @@ void loop() {
 
         }
 
-
         //If player runs into roomswitch, then turn off room lock, and remove any hazards onscreen.
-        if (player->plX == roomSwitchX*8 && player->plY == roomSwitchY*8 && roomLock == true){
+        if (player.plX == roomSwitchX*8 && player.plY == roomSwitchY*8 && roomLock == true){
 
-          memManageOBJ("HAZARDS*","REMOVEALL");
-          memManageOBJ("BULLETS","REMOVEALL");
+          memManageOBJ(HAZARDS,DEACTIVATE);//remove hazards
+          memManageOBJ(BULLETS,DEACTIVATE);//remove bullets
+
           flagSpawnID = 1;
           hazardSpawnID = 1;
           if (numOfHazardsSpawned <= 0) numOfHazardsSpawned = 0;
-          if (EEPROM.read(2) == 1) setSfxInfo("SWITCH", 700, 20);
+          if (EEPROM.read(2) == 1) setSfxInfo(SWITCH, 700, 20);
           roomLock = false;
 
         }
-
 
         //create exit after reaching flag goal, then stage clear when player is at exit.
         if (flagCount >= flagGoal && gameState != 2){
@@ -667,16 +738,15 @@ void loop() {
               }
             }
 
-
           }
 
-          if (roomMap[player->plPosOnMapV][player->plPosOnMapH] == 4) arduboy.drawBitmap(64, 24, &bgtiles[16], 8, 8, WHITE);
+          if (roomMap[player.plPosOnMapV][player.plPosOnMapH] == 4) arduboy.drawBitmap(64, 24, &bgtiles[16], 8, 8, WHITE);
 
-          if (player->plX == 64 && player->plY == 24 && roomMap[player->plPosOnMapV][player->plPosOnMapH] == 4){
+          if (player.plX == 64 && player.plY == 24 && roomMap[player.plPosOnMapV][player.plPosOnMapH] == 4){
 
               if (stage < 59) {
 
-                setMSCInfo("STAGETUNE");
+                setMSCInfo(STAGETUNE);
                 gameState = 2;
 
               }else{
@@ -688,8 +758,6 @@ void loop() {
           }
 
         }
-
-
 
     }
 
@@ -704,14 +772,13 @@ void loop() {
     //Stage cleared. Increase stage var, reset the rest of the vars and remove objects.
     if (gameState == 2 && gameState != 4 && stage < 60 && screen == 3){
 
-
       if (arduboy.everyXFrames(120)){
 
         resetMaps("ROOM");
         resetMaps("SCREEN");
-        memManageOBJ("HAZARDS","REMOVEALL");
-        memManageOBJ("FLAG","REMOVEALL");
-        memManageOBJ("BULLETS","REMOVEALL");
+        memManageOBJ(FLAG,DEACTIVATE);
+        memManageOBJ(HAZARDS,DEACTIVATE);
+        memManageOBJ(BULLETS,DEACTIVATE);
         spawnedFlag = false;
 
         stage+= 1;
@@ -723,9 +790,9 @@ void loop() {
         numOfFlagsSpawned = 0;
         numOfHazardsSpawned = 0;
         spawnedExit = false;
-        player->plPosOnMapH = 0;
-        player->plPosOnMapV = 0;
-        player->plAction = 0;
+        player.plPosOnMapH = 0;
+        player.plPosOnMapV = 0;
+        player.plAction = 0;
         roomLock = false;
         startSet = false;
         flandHazSet = 0;
@@ -734,8 +801,6 @@ void loop() {
 
       }
     }
-
-
 
     //titlescreen and options
     if (screen == 1) {
@@ -753,18 +818,15 @@ void loop() {
         if (menuIndex == 0){
 
           resetVars();
-          memManageOBJ("","REMOVEPLAYER");
-          memManageOBJ("FLAG","REMOVEALL");
-          memManageOBJ("HAZARDS","REMOVEALL");
-          memManageOBJ("BULLETS","REMOVEALL");
+
+          memManageOBJ(FLAG,DEACTIVATE);
+          memManageOBJ(HAZARDS,DEACTIVATE);
+          memManageOBJ(BULLETS,DEACTIVATE);
           resetMaps("ROOM");
           resetMaps("SCREEN");
 
-          //resetVars();
-          //resetMaps("ROOM");
-          //resetMaps("SCREEN");
           stage = 1;
-          player = new Player;
+          player.active = true;
           genMap();
           screen = 3;
           gameState = 1;
@@ -834,7 +896,6 @@ void loop() {
 
       }
 
-
     }
 
     //reset player if hit.
@@ -850,12 +911,12 @@ void loop() {
           unsigned char resetY = random()%7+1;
 
           if (screenMap[resetY][resetX] == 0){
-            player->plX = 16;
-            player->plY = 8;
-            player->plAction = 0;
-            player->plSP = 0;
-            player->isHit = false;
-            player->plFrameInd = 0;
+            player.plX = 16;
+            player.plY = 8;
+            player.plAction = 0;
+            player.plSP = 0;
+            player.isHit = false;
+            player.plFrameInd = 0;
             break;
           }
 
@@ -885,14 +946,11 @@ void loop() {
         if (continues > 0 && gameState != 2) drawBG();
         drawObjects();
         drawPlayer();
-        if (gameState != 2 && player->isHit == false) player->plControls();
-        if (player->delay == false) hazardAIs();
+        if (gameState != 2 && player.isHit == false) player.plControls();
+        if (player.delay == false) hazardAIs();
 
     }
 
-    arduboy.setCursor(8, 8);
-    //if (screen == 3) arduboy.print(roomMap[player->plPosOnMapV][player->plPosOnMapH]);
-    //if (screen == 3) arduboy.print(freeMemory());
     if (screen == 1 || screen == 2 || screen == 3) drawHud();
     arduboy.display();
 }

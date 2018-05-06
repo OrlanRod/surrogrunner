@@ -35,6 +35,9 @@ public:
   unsigned char projIndex = 0;
   unsigned char setSpawnTimer = 150;
 
+  //Pit vars
+  bool pitTrigger = false;
+
   Hazards();
   ~Hazards();
 

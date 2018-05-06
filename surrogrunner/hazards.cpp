@@ -1,10 +1,10 @@
-#include <hazards.h>
-#include <player.h>
-#include <soundfx.h>
-#include <garbage.h>
+#include "hazards.h"
+#include "player.h"
+#include "soundfx.h"
 
 extern Arduboy2 arduboy;
-extern Player *player;
+extern Player player;
+extern Hazards hazardsList[];
 extern unsigned char continues;
 extern unsigned char gameState;
 extern unsigned char invincible;
@@ -31,7 +31,7 @@ void Hazards::hazardAI(void){
       if (hAI == 1){//moving h or v.
 
         static unsigned char aiDir = random(1);
-        
+
         if (arduboy.everyXFrames(stepTimer)){
 
           if (dirCycle == false){//h
@@ -73,10 +73,10 @@ void Hazards::hazardAI(void){
 
         if (arduboy.everyXFrames(stepTimer)){
 
-          if (player->plX > hX && hX < 120) hX+= 8;
-          if (player->plX < hX && hX > 0) hX-= 8;
-          if (player->plY < hY && hY > 8) hY-= 8;
-          if (player->plY > hY && hY < 56) hY+= 8;
+          if (player.plX > hX && hX < 120) hX+= 8;
+          if (player.plX < hX && hX > 0) hX-= 8;
+          if (player.plY < hY && hY > 8) hY-= 8;
+          if (player.plY > hY && hY < 56) hY+= 8;
 
         }
 
@@ -115,38 +115,37 @@ void Hazards::hazardAI(void){
     }
 
 
-  } else if (hType == 3){//Pit
+  } else if (hType == 3 && active == true){//Pit
 
-    if (hX == player->plX && hY == player->plY){
+    if (hX == player.plX && hY == player.plY){
 
       if (hAI == 1){ //cut player speed ro stop if at base speed.
 
-        if (active == true){
+        if (pitTrigger == false){
 
-          if (player->resetRunTimer < 10) {
+          if (player.resetRunTimer < 10) {
 
-            player->resetRunTimer += 2;
-            player->runTimer = player->resetRunTimer;
+            player.resetRunTimer += 2;
+            player.runTimer = player.resetRunTimer;
 
-          } else if (player->resetRunTimer >=10) player->plSP = 0;
+          } else if (player.resetRunTimer >=10) player.plSP = 0;
 
-          active = false;
+          pitTrigger = true;
         }
 
       }
 
       if (hAI == 2){ //teleport player to random x/y spot.
 
-        player->plX = random() % (15 + 0) * 8;
-        player->plY = random() % (7 + 1) * 8;
+        player.plX = random() % (15 + 0) * 8;
+        player.plY = random() % (7 + 1) * 8;
 
-        //active = false;
 
       }
 
 
     }else {
-      active = true;
+      pitTrigger = false;
     }
 
 
@@ -155,8 +154,13 @@ void Hazards::hazardAI(void){
 
       if ((hX < 8 || hX >= 128 || hY < 8 || hY >= 64) && active == true){
 
-        active = false;
-        memManageOBJ("","REMOVEINACTIVE");
+        for (unsigned char i = 0; i < 6; i++){
+          if (hID == hazardsList[i].hID && hazardsList[i].hType == 2){
+            hazardsList[i].fireIndex--;
+            hazardsList[i].projIndex--;
+            active = false;
+          }
+        }
 
       }
 

@@ -1,5 +1,5 @@
 #include <Arduboy2.h>
-#include <soundfx.h>
+#include "soundfx.h"
 #ifndef ASSETS_H
 #define ASSETS_H
 

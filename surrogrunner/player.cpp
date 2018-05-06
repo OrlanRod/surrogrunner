@@ -1,10 +1,11 @@
 #include <Arduboy2.h>
-#include <player.h>
-#include <garbage.h>
+#include "flag.h"
+#include "player.h"
+#include "enums.h"
 
 //Player *players[2] = {0,0};
-Player *player;
-
+Player player;
+extern Flag flag;
 extern const unsigned char assets[];
 
 extern unsigned char numOfScreensH; //The sizes of the game world.
@@ -18,6 +19,7 @@ extern unsigned char roomSwitchY;
 extern unsigned char numOfFlagsSpawned;
 extern unsigned char numOfHazardsSpawned;
 extern void removeObjects(String type);
+extern void memManageOBJ(Names obj, Names act);
 extern bool spawnedSwitch;
 extern void resetSwitch(void);
 extern bool spawnedHazard;
@@ -49,9 +51,9 @@ void Player::plControls(){
 
                 if (plX == 120 && arduboy.pressed(RIGHT_BUTTON) && plPosOnMapH < numOfScreensH && roomLock == false){
 
-                    if (numOfFlagsSpawned > 0) memManageOBJ("FLAG","REMOVEALL");
-                    memManageOBJ("HAZARDS","REMOVEALL");
-                    memManageOBJ("BULLETS","REMOVEALL");
+                    memManageOBJ(FLAG,DEACTIVATE);
+                    memManageOBJ(HAZARDS,DEACTIVATE);
+                    memManageOBJ(BULLETS,DEACTIVATE);
                     numOfHazardsSpawned = 0;
                     plX = 0;
                     delay = true;
@@ -63,9 +65,9 @@ void Player::plControls(){
 
                 } else if (plX == 0 && arduboy.pressed(LEFT_BUTTON) && plPosOnMapH > 0 && roomLock == false){
 
-                    if (numOfFlagsSpawned > 0) memManageOBJ("FLAG","REMOVEALL");
-                    memManageOBJ("HAZARDS","REMOVEALL");
-                    memManageOBJ("BULLETS","REMOVEALL");
+                    memManageOBJ(FLAG,DEACTIVATE);
+                    memManageOBJ(HAZARDS,DEACTIVATE);
+                    memManageOBJ(BULLETS,DEACTIVATE);
                     numOfHazardsSpawned = 0;
                     plX = 120;
                     delay = true;
@@ -77,9 +79,13 @@ void Player::plControls(){
 
                 } else if (plY == 56 && arduboy.pressed(DOWN_BUTTON) && plPosOnMapV < numOfScreensV && roomLock == false) {
 
-                    if (numOfFlagsSpawned > 0) memManageOBJ("FLAG","REMOVEALL");
-                    memManageOBJ("HAZARDS","REMOVEALL");
-                    memManageOBJ("BULLETS","REMOVEALL");
+                  if (numOfFlagsSpawned > 0) {
+                    numOfFlagsSpawned--;
+                    flag.active = false;
+                  }
+                    memManageOBJ(FLAG,DEACTIVATE);
+                    memManageOBJ(HAZARDS,DEACTIVATE);
+                    memManageOBJ(BULLETS,DEACTIVATE);
                     numOfHazardsSpawned = 0;
                     plY = 8;
                     delay = true;
@@ -91,9 +97,13 @@ void Player::plControls(){
 
                 } else if (plY == 8 && arduboy.pressed(UP_BUTTON) && plPosOnMapV > 0 && roomLock == false) {
 
-                    if (numOfFlagsSpawned > 0) memManageOBJ("FLAG","REMOVEALL");
-                    memManageOBJ("HAZARDS","REMOVEALL");
-                    memManageOBJ("BULLETS","REMOVEALL");
+                  if (numOfFlagsSpawned > 0) {
+                    numOfFlagsSpawned--;
+                    flag.active = false;
+                  }
+                    memManageOBJ(FLAG,DEACTIVATE);
+                    memManageOBJ(HAZARDS,DEACTIVATE);
+                    memManageOBJ(BULLETS,DEACTIVATE);
                     numOfHazardsSpawned = 0;
                     plY = 56;
                     delay = true;
